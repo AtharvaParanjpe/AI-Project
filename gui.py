@@ -1,9 +1,9 @@
 from tkinter import *
 import math
 import random
-randints = ()
+randints = []
 for x in range(20):
-    randints.add(random.randint(1,101))
+    randints.append(random.randint(1,99))
 
 print(randints)
 root = Tk()
@@ -18,7 +18,9 @@ for r in range(1, 11):
         
         frame[10*(r-1)+c] = Frame(roots,width=width,height=height,bg="white")
         frame[10*(r-1)+c].pack_propagate(0)
+        # if()
         box[10*(r-1)+c] = Label(frame[10*(r-1)+c], text=10*(r-1)+c, borderwidth=10, background="white", width = width, height = height , fg = "grey", font=("Courier", 19))
+
         box[10*(r-1)+c].pack(fill="both", expand=True,side='left')
         frame[10*(r-1)+c].place(x=(c-1)*width,y=(r-1)*height)
      

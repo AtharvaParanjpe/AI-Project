@@ -5,6 +5,7 @@ import numpy as np
 import time
 from random import shuffle, randrange
 import seeker
+import copy
         
 class theMaze:
     def __init__( self, rows, columns):
@@ -24,10 +25,17 @@ class theMaze:
         self.updateImg()
         self.roots.pack(fill = "both", expand = True)
         self.root.title("AI Maze")   
-        self.b = Button(self.root,text='DFS',command=self.depthFirstSearch)
-        self.b.pack(side='bottom')
+        self.b1 = Button(self.root,text='DFS',command=self.depthFirstSearch)
+        self.b1.pack(side='bottom')
+        self.b2 = Button(self.root,text='Bi-BFS',command=self.bi_directional_BFS)
+        self.b2.pack(side='bottom')
+        self.resetButton = Button(self.root,text='Reset',command=self.resetMaze)
+        self.resetButton.pack(side='bottom')
+        
         self.fringe = None
         self.goal = self.mapstate[self.rows-1, self.columns-1]
+        self.resetMatrix = np.zeros((self.rows,self.columns))
+
 
 
     def updateImg(self):  
@@ -39,9 +47,10 @@ class theMaze:
         self.mapstate = np.where(rand<prob, 0, 1)
         self.mapstate[0,0] = 1
         self.mapstate[self.rows-1, self.columns-1] = 1
-        
         self.update_the_whole_maze()
+        self.resetMatrix = np.copy(self.mapstate);
 
+        
 
     def update_the_maze(self, index):
         c = index%self.rows
@@ -134,8 +143,14 @@ class theMaze:
             if(self.wasAlreadyVisited(xIndex-1,yIndex) and self.mapstate[xIndex-1,yIndex]!=0):
                 fringe.append([xIndex-1,yIndex])
         return fringe
+    
+    def resetMaze(self):
+        self.mapstate = np.copy(self.resetMatrix)
+        self.update_the_whole_maze()
+
 
     def depthFirstSearch(self):
+        self.mapstate = np.ones((self.rows,self.columns))
         
         self.fringe = []
         self.fringe.append([0,0])
@@ -143,17 +158,36 @@ class theMaze:
         while(len(self.fringe)>0):
             element = self.fringe.pop()
             if(element[0]==self.rows-1 and element[1] == self.columns-1):
+                self.mapstate[element[0],element[1]] = 3;
+                self.update_the_maze_simple(element[0],element[1])
+                break;
+            self.fringe = self.pushNeighboursIfNotVisited(element[0],element[1],self.fringe)
+            # print(self.fringe)
+            self.mapstate[element[0],element[1]] = 3;
+            self.update_the_maze_simple(element[0],element[1])
+    
+
+    def bi_directional_BFS(self):
+        
+        self.fringe = []
+        self.fringe.append([0,0])
+        ## started by pushing the first node in the fringe
+        while(len(self.fringe)>0):
+            element = self.fringe[0]
+            self.fringe.remove(element)
+            if(element[0]==self.rows-1 and element[1] == self.columns-1):
+                self.mapstate[element[0],element[1]] = 3;
+                self.update_the_maze_simple(element[0],element[1])
                 break;
             self.fringe = self.pushNeighboursIfNotVisited(element[0],element[1],self.fringe)
             # print(self.fringe)
             self.mapstate[element[0],element[1]] = 3;
             self.update_the_maze_simple(element[0],element[1])
             
-            
 
 
 def main():
-    maze = theMaze(10,10)
+    maze = theMaze(11,11)
     maze.root.mainloop()
     # print("Starting Depth First Search")
 
