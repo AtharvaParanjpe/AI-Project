@@ -10,6 +10,7 @@ from collections import deque
 		
 class theMaze:
 
+	## INITIALIZE THE VARIABLES FOR ALGORITHMS
 	def __init__( self, rows, columns):
 		self.root = Tk()
 		self.box = dict()
@@ -36,24 +37,24 @@ class theMaze:
 		self.aStarEuc.pack(side='bottom')
 		self.aStarMan = Button(self.root,text='A*man',command=self.a_star_man)
 		self.aStarMan.pack(side='bottom')
-
+		
 		self.reset = Button(self.root,text='Reset',command=self.resetButton)
 		self.reset.pack(side='bottom')
 		self.fringe = None
 		self.goal = self.mapstate[self.rows-1, self.columns-1]
-
-
-	def updateImg(self):  
-		self.root.after(1000, self.updateImg)
-
+		
+	
+	## GENERATE THE RANDOM MAZE WITH PROBABILITY
 	def make_rand_maze(self, prob):
 		rand = np.random.rand(self.rows, self.columns)
 		self.mapstate = np.where(rand<prob, 0, 1)
 		self.mapstate[0,0] = 1
 		self.mapstate[self.rows-1, self.columns-1] = 1
 		self.mapstateCopy = np.copy(self.mapstate)
+		
 		self.update_the_whole_maze()
 
+	## UPDATE THE MAZE BY ROW,COL
 	def update_the_maze_simple(self, row,col):
 		if self.mapstate[row,col] == 0:
 			self.drawBox("black", row, col)
@@ -66,12 +67,14 @@ class theMaze:
 		else:
 			self.drawBox("grey", row, col)
 
+	## UPDATE THE ENTIRE MAZE
 	def update_the_whole_maze(self):
 		for i in range(self.rows):
 			for j in range(self.columns):
 				self.update_the_maze_simple(i, j)
 		self.mapstateCopy = np.copy(self.mapstate)
 
+	## DRAW THE COLORS FOR THE BOXES
 	def drawBox(self, color, r,c):
 		# the r and c both starts from zero
 		index = self.rows*(r)+c
@@ -82,40 +85,35 @@ class theMaze:
 		self.frame[index].place(x=(c)*self.width,y=(r)*self.height)
 		self.roots.pack(fill = "both", expand = True)
 	
+
+	## HELPER FUNCTION TO CHECK IF A NODE WAS VISITED
 	def wasAlreadyVisited(self,xIndex,yIndex,visitVal):
 		if(self.mapstate[xIndex,yIndex]!=visitVal):
 			return True;
 		else:
 			return False
 
+	## HELPER FUNCTION FOR DFS TO PUSH THE NEIGHBOURS THAT WERE NOT VISITED AND ARE NOT BLOCKED
 	def pushNeighboursIfNotVisited(self,xIndex,yIndex,fringe,pathMap,visitVal):
-		
 		if(yIndex>0):
 			if(self.wasAlreadyVisited(xIndex,yIndex-1,visitVal) and self.mapstate[xIndex,yIndex-1]!=0):
 				fringe.append([xIndex,yIndex-1])
 				pathMap[(xIndex,yIndex-1)] = [xIndex,yIndex]
-		
 		if(xIndex>0):
 			if(self.wasAlreadyVisited(xIndex-1,yIndex,visitVal) and self.mapstate[xIndex-1,yIndex]!=0):
 				fringe.append([xIndex-1,yIndex])
 				pathMap[(xIndex-1,yIndex)] = [xIndex,yIndex]
-		
-		
+		if(yIndex<self.rows-1):
+			if(self.wasAlreadyVisited(xIndex,yIndex+1,visitVal) and self.mapstate[xIndex,yIndex+1]!=0):
+				fringe.append([xIndex,yIndex+1])
+				pathMap[(xIndex,yIndex+1)] = [xIndex,yIndex]
 		if(xIndex<self.rows-1):
 			if(self.wasAlreadyVisited(xIndex+1,yIndex,visitVal) and self.mapstate[xIndex+1,yIndex]!=0):
 				fringe.append([xIndex+1,yIndex])
 				pathMap[(xIndex+1,yIndex)] = [xIndex,yIndex]
-		
-		if(yIndex<self.rows-1):
-		
-			if(self.wasAlreadyVisited(xIndex,yIndex+1,visitVal) and self.mapstate[xIndex,yIndex+1]!=0):
-				fringe.append([xIndex,yIndex+1])
-				pathMap[(xIndex,yIndex+1)] = [xIndex,yIndex]
-		
-		
-		
 		return fringe,pathMap
 
+	## DEPTH FIRST SEARCH IMPLEMENTATION USING LIST AS A STACK
 	def depthFirstSearch(self):
 		s = time.time()
 		self.fringe = []
@@ -123,28 +121,24 @@ class theMaze:
 		self.fringe.append([0,0])
 		self.pathMap[(0,0)] = [-1,-1]
 		
-		## started by pushing the first node in the fringe
 		while(len(self.fringe)>0):
 			element = self.fringe.pop()
-			# self.visited.append(element)
 			if(element[0]==self.rows-1 and element[1] == self.columns-1):
 				self.mapstate[element[0],element[1]] = 2;
 				self.update_the_maze_simple(element[0],element[1])
 				while(self.pathMap[(element[0],element[1])]!=[-1,-1]):
 					x,y = self.pathMap[(element[0],element[1])]
-					# print(x,y)
 					element = (x,y)
 					self.mapstate[x,y] = 2;
 					self.update_the_maze_simple(x,y)										
 
 				break;
 			self.fringe,self.pathMap = self.pushNeighboursIfNotVisited(element[0],element[1],self.fringe,self.pathMap,3)
-			# print(self.fringe)
 			self.mapstate[element[0],element[1]] = 3;
 			self.update_the_maze_simple(element[0],element[1])
 		print("DFS %s", time.time()-s)
 
-
+	## BREADTH FIRST SEARCH USING LIST AS A QUEUE
 	def breadthFirstSearch(self):   
 		s = time.time()
 		self.q = deque()
@@ -153,6 +147,8 @@ class theMaze:
 		self.max_rows, self.max_cols = self.rows, self.columns
 		while(len(self.q) > 0):
 			self.x, self.y = self.q.popleft()        
+			if((self.rows-1,self.columns-1) in self.visited):
+				break
 			self.visited.append((self.x, self.y))
 			# if(self.x, self.y is self.rows-1, self.columns-1):
 			#     break
@@ -187,6 +183,10 @@ class theMaze:
 		print("BFS %s", time.time()-s)
 	
 	
+	## IMPLEMENTATION START FOR A* ALGORITHM
+
+
+
 	def a_star_euc(self):
 		# Function: A* algorithm with the heuristic, the Euclidean Distance
 		s = time.time()
@@ -240,14 +240,17 @@ class theMaze:
 				return euclidean_distance(qx, qy, x, y)
 			else:
 				return False
+
 		def manhattan_distance(qx, qy, x, y):
 			xD = math.fabs(qx-x)
 			yD = math.fabs(qy-y)
 			return xD+yD
+
 		def euclidean_distance(qx, qy, x, y):
 			xD2 = math.pow(qx-x,2)
 			yD2 = math.pow(qy-y,2)
 			return math.pow(xD2+yD2,1/2)
+		
 		def best_route(theList):
 			nList = []
 			pList = []
@@ -321,58 +324,58 @@ class theMaze:
 		self.update_the_maze_simple(qx,qy)
 		return False            
 	
+	## IMPLEMENTATION END FOR A* ALGORITHM
+
+
+	## IMPLEMENTATION FOR BI-DIRECTIONAL BREADTH-FIRST SEARCH
 	def bi_directional_BFS(self):
 		self.fringe = []
 		self.fringe.append([0,0])
+		
 		pathMapFromStart = {}
 		pathMapFromStart[(0,0)] = [-1,-1]
+
+		## PARENT MAP TO TRACK THE PATH TO GOAL
 		pathMapFromGoal = {}
 		pathMapFromGoal[(self.rows-1,self.columns-1)] = [-1,-1]
-		reverseFringe = []
+		## QUEUE FROM GOAL NODE
+		reverseFringe = []  
 		reverseFringe.append([self.rows-1,self.columns-1])
 		
 		## started by pushing the first node in the fringe
 		while(len(self.fringe)>0 and len(reverseFringe)>0):
 			element = self.fringe[0]
 			self.fringe.remove(element)
-
 			elementFromGoal = reverseFringe[0]
 			reverseFringe.remove(elementFromGoal)
-			# break;
+
 			if(self.mapstate[element[0],element[1]]==4):
 				elementFromGoal = copy.copy(element)
 				self.mapstate[element[0],element[1]]=2
 				self.update_the_maze_simple(element[0],element[1])
-				
 
-
+				## GENERATION OF THE PATH FOR BI-BFS
 				while(pathMapFromStart[element[0],element[1]]!=[-1,-1]):
 					x,y = pathMapFromStart[element[0],element[1]]
-					# print(x,y)
 					element = (x,y)
 					self.mapstate[x,y] = 2
 					self.update_the_maze_simple(x,y)
-				
 				
 				while(pathMapFromGoal[elementFromGoal[0],elementFromGoal[1]]!=[-1,-1]):
 					x,y = pathMapFromGoal[elementFromGoal[0],elementFromGoal[1]]
 					elementFromGoal = (x,y)
 					self.mapstate[x,y] = 2
 					self.update_the_maze_simple(x,y)
-				
 				break;
 			
 			self.fringe,pathMapFromStart = self.pushNeighboursIfNotVisited(element[0],element[1],self.fringe,pathMapFromStart,3)
 			reverseFringe,pathMapFromGoal = self.pushNeighboursIfNotVisited(elementFromGoal[0],elementFromGoal[1],reverseFringe,pathMapFromGoal,4)
-			# print(reverseFringe)
-			# print(self.fringe)
-			
 			self.mapstate[element[0],element[1]] = 3;
 			self.update_the_maze_simple(element[0],element[1])
 			self.mapstate[elementFromGoal[0],elementFromGoal[1]] = 4
 			self.update_the_maze_simple(elementFromGoal[0],elementFromGoal[1])
-
-
+	
+	## RESET BUTTON USED TO UPDATE THE UI
 	def resetButton(self):
 		# print(self.mapstate)
 		for r in range(0, self.rows):
@@ -382,11 +385,10 @@ class theMaze:
 					self.update_the_maze_simple(r,c)			
 
 
-
+## START OF THE MAIN CODE
 def main():
-	maze = theMaze(10, 10)
+	maze = theMaze(20, 20)
 	maze.root.mainloop()
-	# print("Starting Depth First Search")
 
 if __name__ == '__main__':
 	main()
